@@ -30,6 +30,10 @@ llm = ChatOpenAI(
 # Create EDA workflow with the model
 workflow = EDAWorkflow(model=llm)
 
+# Save a visual diagram of the graph
+workflow._compiled_graph.get_graph().draw_mermaid_png(output_file_path="graph.png")
+print("Graph diagram saved to graph.png\n")
+
 # Run analysis on the dataset
 print("Running EDA analysis...\n")
 workflow.invoke_workflow(data_path)
