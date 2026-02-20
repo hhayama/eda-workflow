@@ -12,5 +12,6 @@ Synthesize the accumulated observations from multiple analysis steps into a cohe
 
 # Constraints
 - Keep the summary to 2-3 sentences.
-- Provide 3-5 recommendations.
-- Recommendations should be specific and actionable, not generic.
+- Provide up to 10 recommendations.
+- Recommendations should be specific and actionable
+- Do not provide generic recommendations that could easily apply to any analyses (e.g. reguarly conduct the analysis with updated data) 
