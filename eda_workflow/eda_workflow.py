@@ -1,3 +1,4 @@
+import ast
 import logging
 import os
 import warnings
@@ -116,12 +117,12 @@ class EDAWorkflow:
                 pass
 
         # Leaving this filtering in place for now.
-        if df.shape[0] > 10000:
-            return df.sample(10000).reset_index(drop=True)
-        else:
-            return df
+        # if df.shape[0] > 10000:
+        #     return df.sample(10000).reset_index(drop=True)
+        # else:
+        #     return df
         
-        # return df
+        return df
 
     def get_summary(self):
         """Retrieves the analysis summary."""
@@ -318,6 +319,8 @@ def make_eda_baseline_workflow(
         numeric_cols = state.get("numeric_columns", [])
         # Compute upper and lower bounds for each numeric column based on IQR (Interquartile Range)
         # Create a new dataframe with the outliers and the reason for flagging.
+        outlier_df = pd.DataFrame()
+        sample_outliers_df = pd.DataFrame()
         for col in numeric_cols:
             q1 = df[col].quantile(0.25)
             q3 = df[col].quantile(0.75)
@@ -325,15 +328,41 @@ def make_eda_baseline_workflow(
             lower_bound = q1 - 1.5 * iqr
             upper_bound = q3 + 1.5 * iqr
             lb_df = df[df[col] < lower_bound].copy()
-            lb_df['Outlier Reason'] = col + ' is a low outlier'
+            lb_reason = [[col + ' is a low outlier'] for _ in range(len(lb_df))]
+            lb_df['Outlier Reason'] = lb_reason
+            lb_sample = lb_df[lb_df[col] == lb_df[col].min()].head(1)
+
             ub_df = df[df[col] > upper_bound].copy()
-            ub_df['Outlier Reason'] = col + ' is a high outlier'
-            outlier_df = pd.concat([lb_df, ub_df])        
+            ub_reason = [[col + ' is a high outlier'] for _ in range(len(ub_df))]
+            ub_df['Outlier Reason'] = ub_reason
+            ub_sample = ub_df[ub_df[col] == ub_df[col].max()].head(1)
+
+            joined = pd.concat([lb_df, ub_df])
+            outlier_index = outlier_df.index.tolist()
+            index_to_append = []
+            val = 0
+            for key, value in joined['Outlier Reason'].items():
+                if key in outlier_index:
+                    outlier_df.loc[key]['Outlier Reason'].append(value[0])
+                else:
+                    index_to_append.append(key)
+
+            outlier_df = pd.concat([outlier_df, joined[joined.index.isin(index_to_append)]])
+            sample_outliers_df = pd.concat([sample_outliers_df, lb_sample, ub_sample])
+
+        outlier_df['Outlier Reason'] = outlier_df['Outlier Reason'].astype(str)
+        # Converting this so it looks more readable for the LLM 
+        outlier_df['Outlier Reason'] = outlier_df['Outlier Reason'].apply(lambda x: " & ".join(ast.literal_eval(x)))
+
+
         outliers = {
-            "outlier_df": outlier_df.to_dict() if not outlier_df.empty else {},
             "outlier_count": len(outlier_df),
+            "outlier_category_counts": outlier_df.groupby('Outlier Reason')['Outlier Reason'].count().to_dict(),
             "outlier_percentage": len(outlier_df) / len(df) * 100,
+            # Orienting to records here, because I don't want to entries that are identical except for the outlier reason 
+            "sample_outliers_df": sample_outliers_df.to_dict(orient="records") if not sample_outliers_df.empty else {},
         }
+
         results["flag_outliers"] = outliers
 
         return {

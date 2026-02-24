@@ -19,11 +19,11 @@ from eda_workflow.eda_workflow import EDAWorkflow
 load_dotenv()
 
 # Path to sample dataset
-# data_path = os.path.join("data", "cafe_sales.csv")
+data_path = os.path.join("data", "cafe_sales.csv")
 # Airbnb dataset from https://www.kaggle.com/datasets/arianazmoudeh/airbnbopendata
 # data_path = os.path.join("data", "Airbnb_Open_Data.csv")
 # Tokyo data from inside airbnb https://insideairbnb.com/get-the-data/
-data_path = os.path.join("data", "Tokyo - Sep 09 2025.csv")
+# data_path = os.path.join("data", "Tokyo - Sep 09 2025.csv")
 
 # Initialize OpenAI model
 llm = ChatOpenAI(
